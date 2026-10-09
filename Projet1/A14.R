@@ -94,6 +94,9 @@ dimers_frequency <- function(sequence){
   #'
   dimers <- sliding_windows(sequence = sequence, size = 2, shift = 1)
   
+  col_names <- c("*A", "*C", "*G", "*T")
+  row_names <- c("A*", "C*", "G*", "T*")
+  
   observed_dimers <- matrix(nrow = 4, ncol = 4)
   rownames(observed_dimers) <- row_names
   colnames(observed_dimers) <- col_names
@@ -131,13 +134,14 @@ dimers_frequency <- function(sequence){
 
 
 cat("Getting the Bovine papular stomatitis virus ... \n")
-sequence <- read.GenBank(access.nb = "NC_005337", as.character = TRUE)[[1]]
+sequence <- toupper(read.GenBank(access.nb = "NC_005337", as.character = TRUE)[[1]])
 cat("The lenght of the Bovine papular stomatitis virus is: ", length(sequence))
 
 
-odd_ratios <- function(table, k){
+odd_ratios <- function(sequence, observed_frequencies, k){
   #'Function to compute the odd ratio of k-mers from a sequence
   #'
+  #'    @param sequence : A vector of characters corresponding to a nucleotide sequence (sequence of capital "A"s, "T"s, "C"s and, "G"s)
   #'    @param table : An RDS matrix where each cell is the observed frequency for the k-mer
   #'    @param k : A numerical value that indicate the k-mer (k=2 for dimer, 3 for 3-mer, ...)
   #'    
@@ -146,15 +150,35 @@ odd_ratios <- function(table, k){
   #'        A vector containing the under represented dimers, ordered increasingly
   #'        A vector containing the over represented dimers, ordered increasingly
   
-  expected_frequency <- 1/(4 ^ k)
-  odd_ratio_table <- sapply(table, function(x) {x/expected_frequency})
+  expected_frequency <- c(
+                          A = (sum(sequence == "A")/length(sequence)), 
+                          T = (sum(sequence == "T")/length(sequence)), 
+                          G = (sum(sequence == "G")/length(sequence)), 
+                          C = (sum(sequence == "C")/length(sequence))
+                        )
+  odd_ratio_table <- observed_frequencies
   
+  represented <- list()
+
+  for (i in seq_along(rownames(odd_ratio_table))){
+    for (j in seq_along(colnames(odd_ratio_table))){
+      row_ntd <- strsplit(rownames(odd_ratio_table)[[i]], split = "")[[1]][1]
+      col_ntd <- strsplit(colnames(odd_ratio_table)[[j]], split = "")[[1]][2]
+      dimer <- paste0(row_ntd, col_ntd)
+      odd_ratio_table[i, j] <- round(observed_frequencies[i, j] / (expected_frequency[row_ntd] * expected_frequency[col_ntd]), digits = 4)
+      
+      represented[[length(represented) + 1]] <- c(dimer, round(odd_ratio_table[i, j], digits=4))
+    }
+  }
   
-  return(odd_ratio_table)
+  repr_order <- order(sapply(represented, function(x) as.numeric(x[2])))
+  sorted_repr <- represented[repr_order]
+  saveRDS(odd_ratio_table, file = "odd_ratio_table.rds")
+  return(list(odd_ratio_table=odd_ratio_table, sorted_repr=sorted_repr))
 }
 
-
-
+frequency <- dimers_frequency(sequence)
+ratios <- odd_ratios(sequence, frequency$observed_dimers, 2)
 
 
 
