@@ -135,22 +135,32 @@ sequence <- read.GenBank(access.nb = "NC_005337", as.character = TRUE)[[1]]
 cat("The lenght of the Bovine papular stomatitis virus is: ", length(sequence))
 
 
-odd_ratios <- function(table, k){
-  #'Function to compute the odd ratio of k-mers from a sequence
-  #'
-  #'    @param table : An RDS matrix where each cell is the observed frequency for the k-mer
-  #'    @param k : A numerical value that indicate the k-mer (k=2 for dimer, 3 for 3-mer, ...)
-  #'    
-  #'    @return A list containing: 
-  #'        An RDS matrix of the same size as table with the odd ratio.
-  #'        A vector containing the under represented dimers, ordered increasingly
-  #'        A vector containing the over represented dimers, ordered increasingly
+odd_ratios <- function(sequence, k = 2) {
+  dimers <- sliding_windows(sequence = sequence, size = 2, shift = 1)
+  n_dimers <- length(dimers)
   
-  expected_frequency <- 1/(4 ^ k)
-  odd_ratio_table <- sapply(table, function(x) {x/expected_frequency})
+  seq_upper <- toupper(sequence)
+  total_bases <- length(seq_upper)
+  bases <- c("A", "C", "G", "T")
+  f_bases <- sapply(bases, function(b) sum(seq_upper == b) / total_bases)
   
+  row_names <- c("A*", "C*", "G*", "T*")
+  col_names <- c("*A", "*C", "*G", "*T")
+  odd_ratio_matrix <- matrix(nrow = 4, ncol = 4, dimnames = list(row_names, col_names))
   
-  return(odd_ratio_table)
+  for (i in 1:4) {
+    for (j in 1:4) {
+      dimer <- paste0(bases[i], bases[j])
+      obs_freq_raw <- sum(dimers == dimer) / n_dimers
+      expected_freq <- f_bases[i] * f_bases[j]
+      
+      odd_ratio_matrix[i, j] <- round(obs_freq_raw / expected_freq, digits = 4)
+    }
+  }
+  
+  saveRDS(odd_ratio_matrix, file = "./Projet1/odd_ratios_matrix.rds")
+  
+  return(odd_ratio_matrix)
 }
 
 
