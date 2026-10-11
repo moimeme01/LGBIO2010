@@ -162,16 +162,3 @@ odd_ratios <- function(sequence, k = 2) {
   
   return(odd_ratio_matrix)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
