@@ -6,7 +6,7 @@ library(seqinr)
 library(Biostrings)
 
 # Accession numbers
-accession_numbers <- scan("/Users/thibaultvanni/Documents/UCL/LGBIO2010 - Bioinformatics/LGBIO2010-Projet2/AccessionNumbers.txt", what = character(), quiet = TRUE)
+accession_numbers <- scan("./AccessionNumbers.txt", what = character(), quiet = TRUE)
 
 accession_numbers <- sort(unique(accession_numbers))
 
@@ -53,7 +53,7 @@ seq_strings_unique <- seq_strings[keep]
 length <- length(seq_strings_unique)
 
 seq_set <- DNAStringSet(seq_strings_unique)
-writeXStringSet(seq_set, filepath = "/Users/thibaultvanni/Documents/UCL/LGBIO2010 - Bioinformatics/LGBIO2010-Projet2/FilteredSequences.fasta")
+writeXStringSet(seq_set, filepath = "./FilteredSequences.fasta")
 
 print("The number of sequences is :")
 print(length)
